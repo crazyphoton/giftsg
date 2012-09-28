@@ -1,0 +1,68 @@
+<head>
+  <title>Giftsg</title>
+</head>
+<body>
+	{{> fbconnect}}
+	<div id="main">
+		{{>friends}}
+	</div>
+</body>
+
+<template name="fbconnect">
+	 <div id="fb-root"></div>
+	 {{init}}
+	<fb:login-button show-faces="true" width="200" max-rows="1" scope="publish_actions">
+	</fb:login-button>
+	 <div class="well"> 
+	<div id="auth-loginlink" class="fb-login-button" autologoutlink="true">Login with Facebook</div>
+	<div id="auth-loggedin">
+		logged in
+	</div>
+	<div id="auth-loggedout">
+		loggedout
+	</div>
+	<div id="accesstoken">
+	</div>	
+	<div id="auth-displayname">
+	</div>
+</div>
+</template> 
+
+<template name="friends">
+	<div class="row-fluid" >
+		<div class="upcoming-birthdays span3">
+		{{#each friends}}
+			<div class="friend-wrapper well" id="friend-{{uid}}">
+			<div class="name">
+				{{this.name}}
+			</div>
+			<div class="birthday">
+				{{formatBirthday this.birthday_upcoming}}
+			</div>
+			</div>
+		{{/each}}
+		</div>
+		<div class="gifts span9">
+			{{>gifts}}
+		</div>
+	</div>
+</template>
+
+<template name="gifts">
+<div class="well">
+	{{#if friend}}
+<h3>{{friend.name}}'s gifts</h3>
+	{{#each friend.gifts}}
+	<div class="gift-wrapper" id="gift-{{this.id}}">
+		<img src="{{this.imglink}}"/>
+		<div class="gift-name">{{this.name}}</div>
+		<div class="gift-votes">{{this.votes}} votes</div>
+	</div>
+	<hr />
+	{{/each}}
+	{{else}}
+	<div class="alert">Select a friend</div>
+	{{/if}}
+</div>
+
+</template>
