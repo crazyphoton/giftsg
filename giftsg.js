@@ -21,8 +21,8 @@ if (Meteor.isClient) {
 							Template.friends.isLoadingFB= true;
 							if(response.data && response.data.length > Friends.find().count()){
 								$.each(response.data, function(index, f){
-									var birthday = f.birthday_date.split("/");
-									birthday = new Date(currdate.getFullYear(),birthday[0] - 1, birthday[1] );
+									var b = f.birthday_date.split("/");
+									var birthday = new Date(currdate.getFullYear(),b[0] - 1, b[1] );
 									if(birthday.valueOf() < currdate.valueOf()){
 										birthday.setFullYear(birthday.getFullYear() + 1);
 									}
