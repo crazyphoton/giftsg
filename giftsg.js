@@ -4,11 +4,11 @@ if (Meteor.isClient) {
 	var Friends = new Meteor.Collection("friends");
 	Template.friends.isLoadingFB = false;
 	Handlebars.registerHelper("formatBirthday", function(d){
-//		if(d && d.toDateString){	
-//			return d.toDateString() ;
-//		}else{
+		if(d && d.toDateString){	
+			return d.toDateString() ;
+		}else{
 			return '';
-//		}
+		}
 	});
 	Template.friends.friends = function(){
 		if(FB && !Template.friends.isLoadingFB){
