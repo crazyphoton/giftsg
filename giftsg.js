@@ -52,9 +52,18 @@ if (Meteor.isClient) {
 			Session.set('friend' , friend);
 		}	
 	};
+
 	Template.gifts.friend = function(){
 		return Session.get('friend');
 	}
+
+	Template.new_gift.events = {
+		'submit gift-details' : function(ev){
+			console.log('form was submitted');
+			console.log(ev);
+		}
+	};
+	
 	Template.fbconnect.init = function () {
 		window.fbAsyncInit = function() {
 			FB.init({

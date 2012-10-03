@@ -1,5 +1,5 @@
 <head>
-  <title>Giftsg</title>
+	<title>Giftsg</title>
 </head>
 <body>
 	{{> fbconnect}}
@@ -9,11 +9,11 @@
 </body>
 
 <template name="fbconnect">
-	 <div id="fb-root"></div>
-	 {{init}}
-	<fb:login-button show-faces="true" width="200" max-rows="1" scope="publish_actions">
-	</fb:login-button>
-	 <div class="well"> 
+<div id="fb-root"></div>
+{{init}}
+<fb:login-button show-faces="true" width="200" max-rows="1" scope="publish_actions">
+</fb:login-button>
+<div class="well"> 
 	<div id="auth-loginlink" class="fb-login-button" autologoutlink="true">Login with Facebook</div>
 	<div id="auth-loggedin">
 		logged in
@@ -29,10 +29,10 @@
 </template> 
 
 <template name="friends">
-	<div class="row-fluid" >
-		<div class="upcoming-birthdays span3">
+<div class="row-fluid" >
+	<div class="upcoming-birthdays span3">
 		{{#each friends}}
-			<div class="friend-wrapper well" id="friend-{{uid}}">
+		<div class="friend-wrapper well" id="friend-{{uid}}">
 			<div class="name">
 				{{this.name}}
 			</div>
@@ -41,19 +41,19 @@
 				<!-- {{this.birthday_upcoming}} -->
 				<!-- birthday_upcoming is processed birthday. doesnt work -->
 			</div>
-			</div>
+		</div>
 		{{/each}}
-		</div>
-		<div class="gifts span9">
-			{{>gifts}}
-		</div>
 	</div>
+	<div class="gifts span9">
+		{{>gifts}}
+	</div>
+</div>
 </template>
 
 <template name="gifts">
 <div class="well">
 	{{#if friend}}
-<h3>{{friend.name}}'s gifts</h3>
+	<h3>{{friend.name}}'s gifts</h3>
 	{{#each friend.gifts}}
 	<div class="gift-wrapper" id="gift-{{this.id}}">
 		<img src="{{this.imglink}}"/>
@@ -62,9 +62,35 @@
 	</div>
 	<hr />
 	{{/each}}
+	{{>new_gift}}
 	{{else}}
 	<div class="alert">Select a friend</div>
 	{{/if}}
 </div>
+</template>
 
+<template name="new_gift">
+<form id="gift-details" class="form-horizontal">
+	<legend>Gift Details</legend>
+	<div class="control-group">
+		<label class="control-label" for="gift-name-input">Name</label>
+		<div class="controls">
+			<input type="text" name="gift-name" placeholder="name" id="gift-name-input" />
+		</div>
+	</div>
+	<div class="control-group">
+		<label class="control-label" for="gift-price-input">Name</label>
+		<div class="controls">
+			<input type="text" name="gift-price" placeholder="price" id="gift-price-input" />
+		</div>
+	</div>
+	<div class="control-group">
+		<label class="control-label" for="gift-image-input">Name</label>
+		<div class="controls">
+			<input type="text" name="gift-image" placeholder="image url" id="gift-image-input" />
+		</div>
+	</div>
+	<input type="hidden" name="friend-id" value="{{friend.id}}"/>
+	<button type="submit" class="btn" id="add-new-gifta" name="add">Add new gift</a>
+</form>	
 </template>
