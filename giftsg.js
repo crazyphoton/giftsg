@@ -60,6 +60,13 @@ if (Meteor.isClient) {
 		return Friends.findOne({uid: Session.get('selected_friend')});
 	}
 
+	Template.gifts.events = {
+		'click .add-vote' : function(ev){
+			var giftname = this.name;
+			Meteor.call('addVote', Session.get('selected_friend'), this);
+		}
+	}
+
 	Template.new_gift.events = {
 		'submit form#gift-details' : function(ev){
 			ev.preventDefault();
@@ -115,6 +122,13 @@ if (Meteor.isClient) {
 
 if (Meteor.isServer) {
 	var http = __meteor_bootstrap__.require("http")
+	Meteor.methods({
+		addVote: function (uid, gift){
+			var giftname = gift.name;
+			Friends.update({uid: uid, 'gifts.name' : giftname}, {$inc : {'gifts.$.votes' : 1}});
+			return true;
+		}
+	});
 	Meteor.startup(function () {
 		//			Meteor.publish("friends");
 	});
