@@ -1,7 +1,8 @@
+var Friends = new Meteor.Collection("friends");
+
 if (Meteor.isClient) {
 	//Meteor.subscribe('friends');
 	FB = null;
-	var Friends = new Meteor.Collection("friends");
 	Template.friends.isLoadingFB = false;
 	Handlebars.registerHelper("formatBirthday", function(d){
 		if(d && d.toDateString){	
@@ -21,6 +22,8 @@ if (Meteor.isClient) {
 							Template.friends.isLoadingFB= true;
 							if(response.data && response.data.length > Friends.find().count()){
 								$.each(response.data, function(index, f){
+							//		if(Friends.findOne({uid: f.uid}).count() === 0){
+									if(!Friends.findOne({uid: f.uid})){
 									var b = f.birthday_date.split("/");
 									var birthday = new Date(currdate.getFullYear(),b[0] - 1, b[1] );
 									if(birthday.valueOf() < currdate.valueOf()){
@@ -29,10 +32,12 @@ if (Meteor.isClient) {
 									f.birthday_upcoming =  birthday;
 									f.birthday_original = f.birthday_date;
 								        f.birthday_value = birthday.valueOf();
-									f.gifts = [{id: 1, name: "Kindle fire hd", price:"399", imglink: "http://g-ecx.images-amazon.com/images/G/01/kindle/dp/2012/KT/KT-slate-01-lg._V389394535_.jpg", votes : 5, amount_raised: "200"}, {id: 2, name:"Watch", imglink: "", votes:10, price: 50, amount_raised:0}]
+									//f.gifts = [{id: 1, name: "Kindle fire hd", price:"399", imglink: "http://g-ecx.images-amazon.com/images/G/01/kindle/dp/2012/KT/KT-slate-01-lg._V389394535_.jpg", votes : 5, amount_raised: "200"}, {id: 2, name:"Watch", imglink: "", votes:10, price: 50, amount_raised:0}]
 									Friends.insert(f);
+									}
 								});
-		Session.set('friend', Friends.findOne({}, {"sort": {birthday_value : 1, name: 1}}));
+								var f = Friends.findOne({}, {"sort": {birthday_value : 1, name: 1}});
+								Session.set('selected_friend', f.uid);
 							}
 
 							Template.friends.isLoadingFB = false;
@@ -42,25 +47,27 @@ if (Meteor.isClient) {
 				}
 			});
 		}
-		//riends = _.sortBy(fr, function(f){ return f.birthday_upcoming.valueOf(); });	
-	//	return Friends.find({sort: {birthday_upcoming : 1, name:1}});
 		return Friends.find({}, {"sort": {birthday_value : 1, name: 1}});
 	};
         Template.friends.events = {
 		'click .friend-wrapper':function(ev){
 			var friend = this;
-			Session.set('friend' , friend);
+			Session.set('selected_friend' , friend.uid);
 		}	
 	};
 
 	Template.gifts.friend = function(){
-		return Session.get('friend');
+		return Friends.findOne({uid: Session.get('selected_friend')});
 	}
 
 	Template.new_gift.events = {
-		'submit gift-details' : function(ev){
-			console.log('form was submitted');
-			console.log(ev);
+		'submit form#gift-details' : function(ev){
+			ev.preventDefault();
+			var $form = $(ev.target);
+			
+			var gift = {name: $form.find('input[name=gift-name]').val(), price: $form.find('input[name=gift-price]').val(), imglink: $form.find('input[name=gift-image]').val(), votes : 0, amount_raised: 0};
+			console.log(gift);
+			Friends.update({uid: Session.get('selected_friend')}, {$push : {gifts : gift}});
 		}
 	};
 	
@@ -108,13 +115,7 @@ if (Meteor.isClient) {
 
 if (Meteor.isServer) {
 	var http = __meteor_bootstrap__.require("http")
-	var Friends = new Meteor.Collection("friends");
 	Meteor.startup(function () {
-		Friends.remove({});	
-		if(Friends.find().count() === 0){
-//			Friends.insert({"name": "Nish", "birthday_date": "12/11/1212"});
-//			Friends.insert({"name": "Wish", "birthday_date": "13/11/1251"});
-		}
 		//			Meteor.publish("friends");
 	});
 }
