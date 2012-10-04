@@ -38,9 +38,13 @@ How to get things working (Tested on a mac)
 
 
 --
+v0.02
+==
+1. Click on friend to see real gifts for that person and add a new gift.
+2. Doesnt load friends list from facebook every time. Only adds new friends. Maintians 1 list of friends for all users (Will be changed)
+3. Some bug fixes, code cleanups.
 
 v0.01
 ==
 1. Log into facebook and see list of friends ordered by birthday. 
 2. Click on friend to see dummy gifts for that person.
-
