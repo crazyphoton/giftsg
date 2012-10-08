@@ -1,5 +1,3 @@
-var Friends = new Meteor.Collection("friends");
-
 if (Meteor.isClient) {
 	//Meteor.subscribe('friends');
 	FB = null;
@@ -71,13 +69,13 @@ if (Meteor.isClient) {
 		'submit form#gift-details' : function(ev){
 			ev.preventDefault();
 			var $form = $(ev.target);
-			
+
 			var gift = {name: $form.find('input[name=gift-name]').val(), price: $form.find('input[name=gift-price]').val(), imglink: $form.find('input[name=gift-image]').val(), votes : 0, amount_raised: 0};
 			console.log(gift);
 			Friends.update({uid: Session.get('selected_friend')}, {$push : {gifts : gift}});
 		}
 	};
-	
+
 	Template.fbconnect.init = function () {
 		window.fbAsyncInit = function() {
 			FB.init({
