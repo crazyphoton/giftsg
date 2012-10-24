@@ -9,25 +9,28 @@
 </body>
 
 <template name="fbconnect">
+<div>
+	{{loginButtons}}
+</div>
 <div id="fb-root"></div>
 {{init}}
-<fb:login-button show-faces="true" width="200" max-rows="1" scope="publish_actions">
+<!--<fb:login-button show-faces="true" width="200" max-rows="1" scope="publish_actions">
 </fb:login-button>
 <div class="well"> 
 	<div id="auth-loginlink" class="fb-login-button" autologoutlink="true">Login with Facebook</div>
-</div>
+</div> -->
 </template> 
 
 <template name="friends">
 <div class="row-fluid" >
 	<div class="upcoming-birthdays span3">
 		{{#each friends}}
-		<div class="friend-wrapper well" id="friend-{{uid}}">
+		<div class="friend-wrapper well" id="friend-{{this._id}}">
 			<div class="name">
-				{{this.name}}
+				{{this.profile.name}}
 			</div>
 			<div class="birthday">
-				{{this.birthday_date}}
+				{{this.profile.birthday_date}}
 				<!-- {{this.birthday_upcoming}} -->
 				<!-- birthday_upcoming is processed birthday. doesnt work -->
 			</div>
@@ -43,8 +46,8 @@
 <template name="gifts">
 <div class="well">
 	{{#if friend}}
-	<h3>{{friend.name}}'s gifts</h3>
-	{{#each friend.gifts}}
+	<h3>{{friend.profile.name}}'s gifts</h3>
+	{{#each friend.profile.gifts}}
 	<div class="gift-wrapper" id="gift-{{this.id}}">
 		<img src="{{this.imglink}}"/>
 		<div class="gift-name">{{this.name}}</div>

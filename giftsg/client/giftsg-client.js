@@ -1,12 +1,29 @@
 if (Meteor.isClient) {
+	var accessToken;
+	var FB = null;
 	Meteor.startup(function(){
+		Meteor.autorun(function(){
+			if(Meteor.userLoaded()){ // autoload the closes birthday person
+				if(!Session.get('selected_friend')){
+					var f = Meteor.users.findOne();
+					Session.set('selected_friend', f._id);
+				}
+			}
+		});
+		Accounts.ui.config({ // we need to move this and the birthday fetching process to the server.
+			requestPermissions: {
+					facebook : ['friends_birthday']
+					    }
+		});
+
 		Meteor.autosubscribe(function(){
-			Meteor.subscribe('users');
-			Meteor.subscribe('friendsList', Session.get('loggedInUser'));
+			Meteor.subscribe('friends'); // friends allows access to all friends and their gifts in Meteor.users
+		});
+		Meteor.call("getAccessToken", function(error, _accessToken){ // just to cehck if the access token was retrieved properly. Can remove once stable.
+			accessToken = _accessToken;
+			console.log(_accessToken);	
 		});
 	});
-	FB = null;
-	Template.friends.isLoadingFB = false;
 	Handlebars.registerHelper("formatBirthday", function(d){
 		if(d && d.toDateString){	
 			return d.toDateString() ;
@@ -16,83 +33,35 @@ if (Meteor.isClient) {
 	});
 
 	Template.friends.friends = function(){
-		if(FB && Users && !Template.friends.isLoadingFB){
-			FB.getLoginStatus(function(response){
-				if(response.status === 'connected'){
-					var accessToken = response.authResponse.accessToken;			
-					FB.api('/me/permissions', function (response){
-						var currdate = new Date();
-						$.getJSON("https://graph.facebook.com/fql?q=select uid, name, birthday_date from user where uid in (select uid2 from friend where uid1=me()) and birthday <> '' order by birthday_date &access_token="+accessToken+"&callback=?", function(response){
-							Template.friends.isLoadingFB= true;
-							if(response.data){
-								console.log(FriendsList.findOne().friends);
-								$.each(response.data, function(index, f){
-
-									if($.inArray(f.uid, FriendsList.findOne().friends) === -1){//nope, not in our friendlist
-										if(!Users.findOne({uid: f.uid})){//user doesnt exist either 
-											//add friend as new user with birthday details
-											var b = f.birthday_date.split("/");
-											var birthday = new Date(currdate.getFullYear(),b[0] - 1, b[1] );
-											if(birthday.valueOf() < currdate.valueOf()){
-												birthday.setFullYear(birthday.getFullYear() + 1);
-											}
-											f.birthday_upcoming =  birthday;
-											f.birthday_original = f.birthday_date;
-											f.birthday_value = birthday.valueOf();
-											//f.gifts = [{id: 1, name: "Kindle fire hd", price:"399", imglink: "http://g-ecx.images-amazon.com/images/G/01/kindle/dp/2012/KT/KT-slate-01-lg._V389394535_.jpg", votes : 5, amount_raised: "200"}, {id: 2, name:"Watch", imglink: "", votes:10, price: 50, amount_raised:0}]
-											Users.insert(f);
-										}
-
-										Meteor.call('addFriend', Session.get('loggedInUser'), f.uid);//add to friendslist. FriendList should also update now because it depends on FriendsList
-									}
-								});
-								//init gifts section with closest birthday.
-								if(!Session.get('selected_friend')){
-									var f = Users.findOne({}, {"sort": {birthday_value : 1, name: 1}});
-									Session.set('selected_friend', f.uid);
-								}
-							}
-
-							Template.friends.isLoadingFB = false;
-						});
-
-					});
-				}
-			});
-		}
-
-		if(FriendsList.findOne()){
-			return Users.find({uid : { $in : FriendsList.findOne().friends}}, {"sort": {birthday_value : 1, name: 1}});
-		}
-		return null;
+		return Meteor.users.find(); // this contains friends ordered by birthday + self. self ought to contain option to throw party or something, so we are not removing it.
 	};
 	Template.friends.events = {
 		'click .friend-wrapper':function(ev){
 			var friend = this;
-			//console.log(friend.uid);
-			Session.set('selected_friend' , friend.uid);
+			Session.set('selected_friend' , friend._id);
+			console.log(friend);
 		}	
 	};
 
 	Template.gifts.friend = function(){
-		//console.log(Session.get('selected_friend'));
-		return Users.findOne({uid: Session.get('selected_friend')});
+		return Meteor.users.findOne({_id: Session.get('selected_friend')});
 	}
 
 	Template.gifts.events = {
 		'click .add-vote' : function(ev){
+			//vote for a gift - server addds the vote. It knows who voted, so we just need to send the birthday person and the gift
 			var giftname = this.name;
 			Meteor.call('addVote', Session.get('selected_friend'), this);
 		}
 	}
 
 	Template.new_gift.events = {
-		'submit form#gift-details' : function(ev){
+		'submit form#gift-details' : function(ev){ // add new gift
 			ev.preventDefault();
 			var $form = $(ev.target);
 
 			var gift = {name: $form.find('input[name=gift-name]').val(), price: $form.find('input[name=gift-price]').val(), imglink: $form.find('input[name=gift-image]').val(), votes : 0, amount_raised: 0};
-			Users.update({uid: Session.get('selected_friend')}, {$push : {gifts : gift}});
+			Meteor.call('addGift', Session.get('selected_friend'), gift);
 		}
 	};
 
@@ -107,30 +76,27 @@ if (Meteor.isClient) {
 				scope      : 'friends_birthday'
 			});
 
-			FB.Event.subscribe('auth.statusChange', function(response) {
-				if (response.authResponse) {
-					Session.set('loggedInUser', response.authResponse.userID);
-				}
-			});
-			Template.fbconnect.connect();
-		};
+			if(Meteor.user() && Meteor.user().profile &&  ! Meteor.user().profile.friends ){ 
+			// if there are no friends, this initiates a process to load friends.
+			// @todo - Implement a process (in the server) that regularly checks for new friends and updates our list 
+				FB.api('/me/permissions', function (response){
+					$.getJSON("https://graph.facebook.com/fql?q=select uid, name, birthday_date from user where uid in (select uid2 from friend where uid1=me()) and birthday <> '' order by birthday_date &access_token="+accessToken+"&callback=?", function(response){
+						if(response.data){
+							Meteor.call('updateFriendsList', Meteor.userId(), response.data, function(error,result){
+								console.log(error); //if there is an error. function does not return value, so there will be no result. REturning one is a good way to debug
+							});
+						}
+					});
+
+				});
+			}
+
+		}; // end of window.fbAsyncInit
 		(function(d){
 			var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
 			js = d.createElement('script'); js.id = id; js.async = true;
 			js.src = "//connect.facebook.net/en_US/all.js";
 			d.getElementsByTagName('head')[0].appendChild(js);
 		}(document));
-	};
-	Template.fbconnect.connect = function(){
-		FB.getLoginStatus(function(response){
-			if(response.status === 'connected'){
-				console.log("Access token is "+response.authResponse.accessToken);
-			} else {
-				var permsNeeded = ['friends_birthday'];
-				FB.login(function(response) {
-					console.log(response);
-				}, {scope: permsNeeded.join(',')});
-			}
-		});
 	};
 }
